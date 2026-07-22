@@ -1,4 +1,4 @@
-modules = ["nodejs-24"]
+modules = ["nodejs-24", "postgresql-16"]
 
 [deployment]
 router = "application"
@@ -23,3 +23,6 @@ timeoutMs = 20000
 
 [userenv.shared]
 EXPO_PUBLIC_DOMAIN = "09959cfc-62b2-466d-be96-dae2ce73b61e-00-8gjgqr6r9d3b.sisko.replit.dev"
+
+[nix]
+channel = "stable-25_05"
