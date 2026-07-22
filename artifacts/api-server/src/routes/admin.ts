@@ -12,6 +12,7 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { flaggedPostsTable, postsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { runNewsGenerationJob } from "../jobs/newsGenerationJob";
 
 const router: IRouter = Router();
 
@@ -83,6 +84,16 @@ router.post("/admin/flagged/:id/reject", async (req, res): Promise<void> => {
 
   req.log.info({ id: raw, title: flagged.title }, "Flagged post rejected and deleted");
   res.sendStatus(204);
+});
+
+// POST /admin/trigger-generation — manually kick off a news generation cycle
+router.post("/admin/trigger-generation", async (req, res): Promise<void> => {
+  req.log.info("Manual news generation triggered via admin route");
+  // Run in background so the HTTP response returns immediately
+  runNewsGenerationJob().catch((err: unknown) => {
+    req.log.error({ err }, "Manual news generation failed");
+  });
+  res.json({ ok: true, message: "News generation job started in background" });
 });
 
 export default router;
