@@ -1,45 +1,67 @@
-# IslamNashra
+# IslamNashra — AI-Powered Islamic News Platform
 
-An AI-powered global Islamic news platform that auto-generates short news articles about Muslim communities worldwide, auto-expires them after 72 hours, and delivers them via a polished Expo mobile app.
+> عالمی اسلامی خبریں، ہر لمحہ اپڈیٹ — Global Islamic News, Updated in Real-Time
 
-## Run & Operate
+Full-stack mobile + web app: Express API auto-generates AI-written Islamic news via Groq, and an Expo React Native mobile app displays the feed.
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+---
 
-## Stack
+## Architecture
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+```
+artifacts/
+  api-server/      Express API + node-cron jobs (news generation, auto-delete)
+  islamnashra/     Expo React Native mobile app (Expo Router)
+  mockup-sandbox/  Vite dev server for UI component previews (Canvas)
 
-## Where things live
+lib/
+  db/              Drizzle ORM schema + PostgreSQL (Replit built-in)
+  api-spec/        OpenAPI 3.1 spec (source of truth for client generation)
+  api-client-react/ Generated React Query hooks (auto-generated from spec)
+  api-zod/         Generated Zod validation schemas (auto-generated from spec)
+```
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+## Running the Project
 
-## Architecture decisions
+Three workflows start automatically:
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+| Workflow | Command | What it does |
+|---|---|---|
+| `artifacts/api-server: API Server` | `pnpm --filter @workspace/api-server run dev` | Builds & starts Express API on port 8080. Runs cron jobs: news generation every 45 min, auto-delete every 15 min. |
+| `artifacts/islamnashra: expo` | `pnpm --filter @workspace/islamnashra run dev` | Starts Expo dev server. Scan QR in Expo Go app, or use web preview. |
+| `artifacts/mockup-sandbox: Component Preview Server` | `pnpm --filter @workspace/mockup-sandbox run dev` | Vite dev server for canvas component previews. |
 
-## Product
+## Database
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Uses Replit's built-in PostgreSQL (`DATABASE_URL` is auto-provisioned).
 
-## User preferences
+To push schema changes: `pnpm --filter @workspace/db exec drizzle-kit push`
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+Tables: `posts`, `flagged_posts`, `user_preferences`
 
-## Gotchas
+## Required Secrets
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+All set as Replit Secrets:
 
-## Pointers
+| Secret | Purpose |
+|---|---|
+| `GROQ_API_KEY` | AI article generation via Groq |
+| `GOOGLE_SEARCH_API_KEY` | Image fetching via Google Custom Search |
+| `GOOGLE_SEARCH_ENGINE_ID` | Google CSE ID (cx value) |
+| `SESSION_SECRET` | Express session signing |
 
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+## Key Files
+
+- `artifacts/api-server/src/jobs/newsGenerationJob.ts` — AI → moderation → publish pipeline
+- `artifacts/api-server/src/lib/imageProvider.ts` — Swappable image provider (swap to Pexels/Pixabay here)
+- `artifacts/api-server/src/lib/contentModeration.ts` — Keyword/pattern filter before publish
+- `lib/api-spec/openapi.yaml` — OpenAPI spec; regenerate client with `pnpm --filter @workspace/api-spec run generate`
+
+## GitHub
+
+Remote: `https://github.com/ziakhalid5566/IslamNashra`
+
+## User Preferences
+
+- Keep the project's existing monorepo structure (pnpm workspace).
+- Use Replit's built-in PostgreSQL; do not switch to external providers unless asked.
