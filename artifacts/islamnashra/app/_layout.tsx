@@ -13,8 +13,21 @@ import {
 } from '@expo-google-fonts/inter';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Notifications from 'expo-notifications';
 import { setBaseUrl } from '@workspace/api-client-react';
 import { LanguageProvider } from '@/contexts/LanguageContext';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
+
+// How push notifications are handled when the app is in the foreground.
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -29,6 +42,19 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="post/[id]" options={{ headerShown: false }} />
     </Stack>
+  );
+}
+
+/** Inner component so it can use QueryClient hooks (usePushNotifications uses useUpsertPreferences). */
+function AppWithPush() {
+  usePushNotifications();
+
+  return (
+    <GestureHandlerRootView>
+      <KeyboardProvider>
+        <RootLayoutNav />
+      </KeyboardProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -53,11 +79,7 @@ export default function RootLayout() {
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <LanguageProvider>
-            <GestureHandlerRootView>
-              <KeyboardProvider>
-                <RootLayoutNav />
-              </KeyboardProvider>
-            </GestureHandlerRootView>
+            <AppWithPush />
           </LanguageProvider>
         </QueryClientProvider>
       </ErrorBoundary>

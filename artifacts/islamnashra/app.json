@@ -28,7 +28,17 @@
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#1a5c38",
+          "sounds": [],
+          "androidMode": "default",
+          "androidCollapsedTitle": "IslamNashra"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

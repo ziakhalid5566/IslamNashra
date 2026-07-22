@@ -1,1 +1,0 @@
-- [IslamNashra architecture](islamnashra-arch.md) — full-stack Expo + Express Islamic news app; cron jobs in api-server, swappable imageProvider.ts, content moderation before publish.
