@@ -17,6 +17,8 @@
  * in the attribution field for transparency.
  */
 
+import { logger } from "./logger";
+
 export interface ImageResult {
   url: string;
   attribution: string;
@@ -40,6 +42,12 @@ export async function fetchImage(query: string): Promise<ImageResult | null> {
 
     const response = await fetch(url);
     if (!response.ok) {
+      let errBody: unknown;
+      try { errBody = await response.json(); } catch { errBody = null; }
+      logger.error(
+        { status: response.status, statusText: response.statusText, body: errBody },
+        "imageProvider: Google CSE request failed",
+      );
       return null;
     }
 
@@ -48,6 +56,7 @@ export async function fetchImage(query: string): Promise<ImageResult | null> {
     };
 
     if (!data.items || data.items.length === 0) {
+      logger.warn({ query }, "imageProvider: Google CSE returned no image results");
       return null;
     }
 
@@ -55,7 +64,8 @@ export async function fetchImage(query: string): Promise<ImageResult | null> {
       url: data.items[0].link,
       attribution: "Image via Google Search",
     };
-  } catch {
+  } catch (err) {
+    logger.error({ err }, "imageProvider: unexpected error during image fetch");
     return null;
   }
 }

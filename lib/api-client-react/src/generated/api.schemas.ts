@@ -23,6 +23,18 @@ export interface Post {
   expiresAt: string;
   isBreaking: boolean;
   createdAt: string;
+  /** @nullable */
+  titleEn?: string | null;
+  /** @nullable */
+  bodyEn?: string | null;
+  /** @nullable */
+  titleUr?: string | null;
+  /** @nullable */
+  bodyUr?: string | null;
+  /** @nullable */
+  titleAr?: string | null;
+  /** @nullable */
+  bodyAr?: string | null;
 }
 
 export interface PostListResponse {

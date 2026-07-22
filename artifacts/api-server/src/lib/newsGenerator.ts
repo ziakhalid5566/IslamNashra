@@ -6,6 +6,9 @@
  * or named individuals. All content must be treated as AI-compiled summaries, not
  * verified journalism. The "AI-Generated Summary" label must appear in the UI on
  * every article.
+ *
+ * Multi-language: Each article is generated in English, Urdu, and Arabic in a single
+ * Groq call to minimise API cost while supporting a multilingual audience.
  */
 
 import Groq from "groq-sdk";
@@ -23,8 +26,18 @@ export const CATEGORIES = [
 export type Category = (typeof CATEGORIES)[number];
 
 export interface GeneratedArticle {
-  title: string;
-  body: string;
+  /** English headline — also stored in the legacy `title` column */
+  title_en: string;
+  /** English body — also stored in the legacy `body` column */
+  body_en: string;
+  /** Urdu headline */
+  title_ur: string;
+  /** Urdu body */
+  body_ur: string;
+  /** Arabic headline */
+  title_ar: string;
+  /** Arabic body */
+  body_ar: string;
   category: string;
   significanceScore: number;
   sourceNote: string;
@@ -50,13 +63,17 @@ Hajj/Umrah updates, Islamic education, humanitarian affairs involving Muslim com
 const USER_PROMPT = `Generate exactly 5 distinct news summaries about global Islamic and Muslim affairs.
 Ensure variety in geography and topic — do not repeat the same region or theme twice.
 
-For each item, produce a JSON object with:
-- "title": A concise, factual headline (max 15 words, no sensationalism)
-- "body": 100-200 word factual summary in news style. General context, no fabricated specifics.
+For each item, produce a JSON object with ALL of these fields:
+- "title_en": Concise English headline (max 15 words, no sensationalism)
+- "body_en": 100-150 word factual English summary in news style. General context, no fabricated specifics.
+- "title_ur": Urdu translation of the English headline
+- "body_ur": Urdu translation of the English body (natural, fluent Urdu — not word-for-word)
+- "title_ar": Arabic translation of the English headline
+- "body_ar": Arabic translation of the English body (natural, fluent Arabic)
 - "category": Exactly one of: "World", "Palestine", "South Asia", "Scholars", "Community"
 - "significanceScore": Integer 1-10 (1 = minor community news, 10 = major international event)
 - "sourceNote": Always "Compiled from multiple international sources"
-- "isBreaking": boolean — true ONLY for significanceScore >= 9 items
+- "isBreaking": boolean — true ONLY for significanceScore >= 9
 
 Return ONLY a valid JSON array with exactly 5 objects. No markdown, no preamble, no explanation.`;
 
@@ -69,7 +86,7 @@ export async function generateNewsArticles(): Promise<GeneratedArticle[]> {
       ],
       model: "llama-3.3-70b-versatile",
       temperature: 0.65,
-      max_tokens: 4000,
+      max_tokens: 12000,
     });
 
     const content = completion.choices[0]?.message?.content;
@@ -99,13 +116,17 @@ export async function generateNewsArticles(): Promise<GeneratedArticle[]> {
       .filter(
         (a) =>
           a &&
-          typeof a.title === "string" &&
-          typeof a.body === "string" &&
+          typeof a.title_en === "string" &&
+          typeof a.body_en === "string" &&
           typeof a.category === "string" &&
           typeof a.significanceScore === "number",
       )
       .map((a) => ({
         ...a,
+        title_ur: typeof a.title_ur === "string" ? a.title_ur : a.title_en,
+        body_ur: typeof a.body_ur === "string" ? a.body_ur : a.body_en,
+        title_ar: typeof a.title_ar === "string" ? a.title_ar : a.title_en,
+        body_ar: typeof a.body_ar === "string" ? a.body_ar : a.body_en,
         // Enforce source note — never allow AI to invent sources
         sourceNote: "Compiled from multiple international sources",
         // Cap significance score to valid range

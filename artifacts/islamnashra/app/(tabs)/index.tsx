@@ -15,12 +15,14 @@ import { NewsCard } from '@/components/NewsCard';
 import { SkeletonCard } from '@/components/SkeletonCard';
 import { Ionicons } from '@expo/vector-icons';
 import type { Post } from '@workspace/api-client-react/src/generated/api.schemas';
+import { useLanguage, LANGUAGE_OPTIONS } from '@/contexts/LanguageContext';
 
 const CATEGORIES = ['All', 'World', 'Palestine', 'South Asia', 'Scholars', 'Community'];
 
 export default function FeedScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const { language, setLanguage } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -46,6 +48,35 @@ export default function FeedScreen() {
     <View style={[styles.header, { paddingTop: insets.top, backgroundColor: colors.primary }]}>
       <Text style={[styles.headerUrdu, { color: colors.primaryForeground }]}>اسلام نشرہ</Text>
       <Text style={[styles.headerEnglish, { color: colors.accent }]}>IslamNashra</Text>
+
+      {/* Language switcher */}
+      <View style={styles.langRow}>
+        {LANGUAGE_OPTIONS.map((opt) => {
+          const active = language === opt.code;
+          return (
+            <Pressable
+              key={opt.code}
+              onPress={() => setLanguage(opt.code)}
+              style={[
+                styles.langBtn,
+                {
+                  backgroundColor: active ? colors.accent : 'rgba(255,255,255,0.15)',
+                  borderColor: active ? colors.accent : 'transparent',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.langBtnText,
+                  { color: active ? colors.accentForeground : colors.primaryForeground },
+                ]}
+              >
+                {opt.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 
@@ -105,7 +136,7 @@ export default function FeedScreen() {
             </Text>
           </View>
         )}
-        <NewsCard post={item} />
+        <NewsCard post={item} language={language} />
       </>
     );
   };
@@ -149,7 +180,7 @@ export default function FeedScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {renderHeader()}
       {renderCategories()}
-      
+
       <FlatList
         data={data?.posts || []}
         keyExtractor={(item) => item.id}
@@ -176,7 +207,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    paddingBottom: 16,
+    paddingBottom: 12,
   },
   headerUrdu: {
     fontSize: 24,
@@ -187,6 +218,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter_600SemiBold',
     letterSpacing: 1,
+  },
+  langRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+  },
+  langBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  langBtnText: {
+    fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
   },
   categoriesWrapper: {
     borderBottomWidth: StyleSheet.hairlineWidth,

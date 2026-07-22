@@ -95,14 +95,20 @@ export async function runNewsGenerationJob(): Promise<void> {
             { dailyImageCount, title: article.title },
             "Image fetched for article",
           );
+        } else {
+          logger.warn(
+            { title: article.title, score: article.significanceScore },
+            "Image fetch returned null for eligible article — check imageProvider logs for details",
+          );
         }
       }
 
       const [post] = await db
         .insert(postsTable)
         .values({
-          title: article.title,
-          body: article.body,
+          // title/body store English content for backwards-compat (notifications, API fallback)
+          title: article.title_en,
+          body: article.body_en,
           category: article.category,
           imageUrl,
           hasImage,
@@ -111,6 +117,13 @@ export async function runNewsGenerationJob(): Promise<void> {
           publishedAt: now,
           expiresAt,
           isBreaking: article.isBreaking,
+          // Multi-language fields
+          titleEn: article.title_en,
+          bodyEn: article.body_en,
+          titleUr: article.title_ur,
+          bodyUr: article.body_ur,
+          titleAr: article.title_ar,
+          bodyAr: article.body_ar,
         })
         .returning();
 

@@ -20,4 +20,16 @@ export interface Post {
   expiresAt: Date;
   isBreaking: boolean;
   createdAt: Date;
+  /** @nullable */
+  titleEn?: string | null;
+  /** @nullable */
+  bodyEn?: string | null;
+  /** @nullable */
+  titleUr?: string | null;
+  /** @nullable */
+  bodyUr?: string | null;
+  /** @nullable */
+  titleAr?: string | null;
+  /** @nullable */
+  bodyAr?: string | null;
 }

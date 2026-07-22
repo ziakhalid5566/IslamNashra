@@ -248,6 +248,18 @@ components:
         createdAt:
           type: string
           format: date-time
+        titleEn:
+          type: ["string", "null"]
+        bodyEn:
+          type: ["string", "null"]
+        titleUr:
+          type: ["string", "null"]
+        bodyUr:
+          type: ["string", "null"]
+        titleAr:
+          type: ["string", "null"]
+        bodyAr:
+          type: ["string", "null"]
 
     PostListResponse:
       type: object

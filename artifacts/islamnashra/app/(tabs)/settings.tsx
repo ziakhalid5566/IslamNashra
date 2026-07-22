@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useGetPreferences, useUpsertPreferences } from '@workspace/api-client-react';
+import { useLanguage, LANGUAGE_OPTIONS } from '@/contexts/LanguageContext';
 
 const CATEGORIES = ['World', 'Palestine', 'South Asia', 'Scholars', 'Community'];
 
@@ -72,6 +73,7 @@ export default function SettingsScreen() {
     });
   };
 
+  const { language, setLanguage } = useLanguage();
   const isNotificationsEnabled = preferences?.notificationsEnabled ?? false;
   const followedCategories = preferences?.followedCategories || [];
 
@@ -86,6 +88,38 @@ export default function SettingsScreen() {
       <View style={[styles.header, { backgroundColor: colors.primary }]}>
         <Text style={[styles.headerUrdu, { color: colors.primaryForeground }]}>اسلام نشرہ</Text>
         <Text style={[styles.headerEnglish, { color: colors.accent }]}>IslamNashra</Text>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Language</Text>
+        <Text style={[styles.sectionSubtitle, { color: colors.mutedForeground }]}>
+          Choose the language for news content
+        </Text>
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          {LANGUAGE_OPTIONS.map((opt, index) => {
+            const isActive = language === opt.code;
+            return (
+              <Pressable
+                key={opt.code}
+                style={[
+                  styles.row,
+                  index < LANGUAGE_OPTIONS.length - 1 && [
+                    styles.rowBorder,
+                    { borderBottomColor: colors.border },
+                  ],
+                ]}
+                onPress={() => setLanguage(opt.code)}
+              >
+                <Text style={[styles.rowText, { color: colors.cardForeground }]}>
+                  {opt.label}
+                </Text>
+                {isActive && (
+                  <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
 
       <View style={styles.section}>

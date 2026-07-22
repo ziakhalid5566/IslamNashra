@@ -43,7 +43,13 @@ export const ListPostsResponse = zod.object({
   "publishedAt": zod.coerce.date(),
   "expiresAt": zod.coerce.date(),
   "isBreaking": zod.boolean(),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "titleEn": zod.string().nullish(),
+  "bodyEn": zod.string().nullish(),
+  "titleUr": zod.string().nullish(),
+  "bodyUr": zod.string().nullish(),
+  "titleAr": zod.string().nullish(),
+  "bodyAr": zod.string().nullish()
 })),
   "total": zod.number(),
   "page": zod.number(),
@@ -81,7 +87,13 @@ export const GetPostResponse = zod.object({
   "publishedAt": zod.coerce.date(),
   "expiresAt": zod.coerce.date(),
   "isBreaking": zod.boolean(),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "titleEn": zod.string().nullish(),
+  "bodyEn": zod.string().nullish(),
+  "titleUr": zod.string().nullish(),
+  "bodyUr": zod.string().nullish(),
+  "titleAr": zod.string().nullish(),
+  "bodyAr": zod.string().nullish()
 })
 
 
@@ -158,7 +170,13 @@ export const ApprovePostResponse = zod.object({
   "publishedAt": zod.coerce.date(),
   "expiresAt": zod.coerce.date(),
   "isBreaking": zod.boolean(),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "titleEn": zod.string().nullish(),
+  "bodyEn": zod.string().nullish(),
+  "titleUr": zod.string().nullish(),
+  "bodyUr": zod.string().nullish(),
+  "titleAr": zod.string().nullish(),
+  "bodyAr": zod.string().nullish()
 })
 
 

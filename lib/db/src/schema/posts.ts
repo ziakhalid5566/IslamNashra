@@ -22,6 +22,13 @@ export const postsTable = pgTable("posts", {
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   isBreaking: boolean("is_breaking").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  // Multi-language fields (nullable for backwards-compat with older posts)
+  titleEn: text("title_en"),
+  bodyEn: text("body_en"),
+  titleUr: text("title_ur"),
+  bodyUr: text("body_ur"),
+  titleAr: text("title_ar"),
+  bodyAr: text("body_ar"),
 });
 
 export const insertPostSchema = createInsertSchema(postsTable).omit({

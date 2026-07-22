@@ -15,12 +15,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { timeAgo, expiresIn } from '@/components/NewsCard';
+import { useLanguage, getLocalizedContent } from '@/contexts/LanguageContext';
 
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { language } = useLanguage();
 
   const { data: post, isLoading, isError } = useGetPost(id, {
     query: {
@@ -28,12 +30,15 @@ export default function PostDetailScreen() {
     },
   });
 
+  const localized = post ? getLocalizedContent(post, language) : null;
+  const isRtl = language === 'ur' || language === 'ar';
+
   const handleShare = async () => {
-    if (!post) return;
+    if (!post || !localized) return;
     try {
       await Share.share({
-        message: `${post.title}\n\n${post.body}\n\nRead more on IslamNashra`,
-        title: post.title,
+        message: `${localized.title}\n\n${localized.body}\n\nRead more on IslamNashra`,
+        title: localized.title,
       });
     } catch (error) {
       console.error(error);
@@ -115,7 +120,15 @@ export default function PostDetailScreen() {
             </Text>
           </View>
 
-          <Text style={[styles.title, { color: colors.foreground }]}>{post.title}</Text>
+          <Text
+            style={[
+              styles.title,
+              { color: colors.foreground },
+              isRtl && styles.rtlText,
+            ]}
+          >
+            {localized!.title}
+          </Text>
 
           <View style={styles.timeRow}>
             <Ionicons name="time-outline" size={14} color={colors.mutedForeground} />
@@ -126,7 +139,15 @@ export default function PostDetailScreen() {
 
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-          <Text style={[styles.body, { color: colors.foreground }]}>{post.body}</Text>
+          <Text
+            style={[
+              styles.body,
+              { color: colors.foreground },
+              isRtl && styles.rtlText,
+            ]}
+          >
+            {localized!.body}
+          </Text>
 
           {post.sourceNote && (
             <Text style={[styles.sourceNote, { color: colors.mutedForeground }]}>
@@ -251,6 +272,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_700Bold',
     lineHeight: 32,
     marginBottom: 12,
+  },
+  rtlText: {
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
   timeRow: {
     flexDirection: 'row',

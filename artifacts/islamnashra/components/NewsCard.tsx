@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Link } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import type { Post } from '@workspace/api-client-react/src/generated/api.schemas';
+import { type Language, getLocalizedContent } from '@/contexts/LanguageContext';
 
 export const timeAgo = (iso: string) => {
   const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -23,10 +24,12 @@ export const expiresIn = (iso: string) => {
 
 interface NewsCardProps {
   post: Post;
+  language: Language;
 }
 
-export function NewsCard({ post }: NewsCardProps) {
+export function NewsCard({ post, language }: NewsCardProps) {
   const colors = useColors();
+  const { title, body } = getLocalizedContent(post, language);
 
   const handlePressIn = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -83,16 +86,24 @@ export function NewsCard({ post }: NewsCardProps) {
               </View>
 
               <Text
-                style={[styles.title, { color: colors.cardForeground }]}
+                style={[
+                  styles.title,
+                  { color: colors.cardForeground },
+                  (language === 'ur' || language === 'ar') && styles.rtlText,
+                ]}
                 numberOfLines={3}
               >
-                {post.title}
+                {title}
               </Text>
               <Text
-                style={[styles.excerpt, { color: colors.mutedForeground }]}
+                style={[
+                  styles.excerpt,
+                  { color: colors.mutedForeground },
+                  (language === 'ur' || language === 'ar') && styles.rtlText,
+                ]}
                 numberOfLines={2}
               >
-                {post.body}
+                {body}
               </Text>
 
               <View style={styles.footerRow}>
@@ -197,6 +208,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     lineHeight: 20,
     marginBottom: 16,
+  },
+  rtlText: {
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
   footerRow: {
     flexDirection: 'row',
