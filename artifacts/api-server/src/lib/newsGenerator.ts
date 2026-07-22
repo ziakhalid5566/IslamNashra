@@ -65,11 +65,11 @@ Ensure variety in geography and topic — do not repeat the same region or theme
 
 For each item, produce a JSON object with ALL of these fields:
 - "title_en": Concise English headline (max 15 words, no sensationalism)
-- "body_en": 100-150 word factual English summary in news style. General context, no fabricated specifics.
-- "title_ur": Urdu translation of the English headline
-- "body_ur": Urdu translation of the English body (natural, fluent Urdu — not word-for-word)
-- "title_ar": Arabic translation of the English headline
-- "body_ar": Arabic translation of the English body (natural, fluent Arabic)
+- "body_en": 60-80 word factual English summary. General context, no fabricated specifics.
+- "title_ur": Urdu headline (natural translation)
+- "body_ur": 60-80 word Urdu summary (natural Urdu, not literal translation)
+- "title_ar": Arabic headline (natural translation)
+- "body_ar": 60-80 word Arabic summary (natural Arabic, not literal translation)
 - "category": Exactly one of: "World", "Palestine", "South Asia", "Scholars", "Community"
 - "significanceScore": Integer 1-10 (1 = minor community news, 10 = major international event)
 - "sourceNote": Always "Compiled from multiple international sources"
@@ -86,7 +86,7 @@ export async function generateNewsArticles(): Promise<GeneratedArticle[]> {
       ],
       model: "llama-3.3-70b-versatile",
       temperature: 0.65,
-      max_tokens: 12000,
+      max_tokens: 7000,
     });
 
     const content = completion.choices[0]?.message?.content;

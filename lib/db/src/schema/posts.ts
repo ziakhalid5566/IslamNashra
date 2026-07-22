@@ -29,6 +29,9 @@ export const postsTable = pgTable("posts", {
   bodyUr: text("body_ur"),
   titleAr: text("title_ar"),
   bodyAr: text("body_ar"),
+  // Engagement counters
+  likesCount: integer("likes_count").notNull().default(0),
+  viewsCount: integer("views_count").notNull().default(0),
 });
 
 export const insertPostSchema = createInsertSchema(postsTable).omit({

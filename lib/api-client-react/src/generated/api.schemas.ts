@@ -35,6 +35,13 @@ export interface Post {
   titleAr?: string | null;
   /** @nullable */
   bodyAr?: string | null;
+  likesCount?: number;
+  viewsCount?: number;
+}
+
+export interface EngagementResponse {
+  likesCount: number;
+  viewsCount?: number;
 }
 
 export interface PostListResponse {

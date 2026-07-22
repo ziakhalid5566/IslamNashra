@@ -21,6 +21,7 @@ import type {
 
 import type {
   CategoryCount,
+  EngagementResponse,
   ErrorResponse,
   FlaggedPost,
   HealthStatus,
@@ -375,6 +376,148 @@ export function useGetPost<TData = Awaited<ReturnType<typeof getPost>>, TError =
 
 
 
+
+export const getLikePostUrl = (id: string,) => {
+
+
+
+
+  return `/api/posts/${id}/like`
+}
+
+/**
+ * @summary Increment likes count for a post
+ */
+export const likePost = async (id: string, options?: RequestInit): Promise<EngagementResponse> => {
+
+  return customFetch<EngagementResponse>(getLikePostUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getLikePostMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof likePost>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof likePost>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['likePost'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof likePost>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  likePost(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LikePostMutationResult = NonNullable<Awaited<ReturnType<typeof likePost>>>
+
+    export type LikePostMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Increment likes count for a post
+ */
+export const useLikePost = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof likePost>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof likePost>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getLikePostMutationOptions(options));
+    }
+
+export const getViewPostUrl = (id: string,) => {
+
+
+
+
+  return `/api/posts/${id}/view`
+}
+
+/**
+ * @summary Increment view count for a post (call once per device per post)
+ */
+export const viewPost = async (id: string, options?: RequestInit): Promise<EngagementResponse> => {
+
+  return customFetch<EngagementResponse>(getViewPostUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getViewPostMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof viewPost>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof viewPost>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['viewPost'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof viewPost>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  viewPost(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ViewPostMutationResult = NonNullable<Awaited<ReturnType<typeof viewPost>>>
+
+    export type ViewPostMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Increment view count for a post (call once per device per post)
+ */
+export const useViewPost = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof viewPost>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof viewPost>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getViewPostMutationOptions(options));
+    }
 
 export const getUpsertPreferencesUrl = () => {
 

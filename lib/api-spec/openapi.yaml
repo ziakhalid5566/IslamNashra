@@ -102,6 +102,56 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /posts/{id}/like:
+    post:
+      operationId: likePost
+      tags: [posts]
+      summary: Increment likes count for a post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated likes count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EngagementResponse"
+        "404":
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /posts/{id}/view:
+    post:
+      operationId: viewPost
+      tags: [posts]
+      summary: Increment view count for a post (call once per device per post)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated view count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EngagementResponse"
+        "404":
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /preferences:
     post:
       operationId: upsertPreferences
@@ -260,6 +310,21 @@ components:
           type: ["string", "null"]
         bodyAr:
           type: ["string", "null"]
+        likesCount:
+          type: integer
+          default: 0
+        viewsCount:
+          type: integer
+          default: 0
+
+    EngagementResponse:
+      type: object
+      required: [likesCount]
+      properties:
+        likesCount:
+          type: integer
+        viewsCount:
+          type: integer
 
     PostListResponse:
       type: object

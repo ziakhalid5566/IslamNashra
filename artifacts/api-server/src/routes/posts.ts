@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { postsTable } from "@workspace/db";
-import { and, gt, eq, desc, count } from "drizzle-orm";
+import { and, gt, eq, desc, count, sql } from "drizzle-orm";
 import { z } from "zod/v4";
 
 const router: IRouter = Router();
@@ -77,6 +77,43 @@ router.get("/posts/:id", async (req, res): Promise<void> => {
   }
 
   res.json(post);
+});
+
+// POST /posts/:id/like — increment likesCount and return the new value
+router.post("/posts/:id/like", async (req, res): Promise<void> => {
+  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+  const [updated] = await db
+    .update(postsTable)
+    .set({ likesCount: sql`${postsTable.likesCount} + 1` })
+    .where(eq(postsTable.id, raw))
+    .returning({ likesCount: postsTable.likesCount });
+
+  if (!updated) {
+    res.status(404).json({ error: "Post not found" });
+    return;
+  }
+
+  res.json({ likesCount: updated.likesCount });
+});
+
+// POST /posts/:id/view — increment viewsCount and return the new value
+// The client is responsible for calling this at most once per device per post (via AsyncStorage).
+router.post("/posts/:id/view", async (req, res): Promise<void> => {
+  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+  const [updated] = await db
+    .update(postsTable)
+    .set({ viewsCount: sql`${postsTable.viewsCount} + 1` })
+    .where(eq(postsTable.id, raw))
+    .returning({ viewsCount: postsTable.viewsCount });
+
+  if (!updated) {
+    res.status(404).json({ error: "Post not found" });
+    return;
+  }
+
+  res.json({ viewsCount: updated.viewsCount });
 });
 
 export default router;

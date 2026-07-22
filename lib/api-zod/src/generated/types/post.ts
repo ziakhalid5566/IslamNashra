@@ -32,4 +32,6 @@ export interface Post {
   titleAr?: string | null;
   /** @nullable */
   bodyAr?: string | null;
+  likesCount?: number;
+  viewsCount?: number;
 }

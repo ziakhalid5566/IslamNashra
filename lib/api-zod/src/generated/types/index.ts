@@ -7,6 +7,7 @@
  */
 
 export * from './categoryCount';
+export * from './engagementResponse';
 export * from './errorResponse';
 export * from './flaggedPost';
 export * from './healthStatus';

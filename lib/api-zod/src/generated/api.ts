@@ -30,6 +30,9 @@ export const ListPostsQueryParams = zod.object({
   "limit": zod.coerce.number().default(listPostsQueryLimitDefault)
 })
 
+export const listPostsResponsePostsItemLikesCountDefault = 0;
+export const listPostsResponsePostsItemViewsCountDefault = 0;
+
 export const ListPostsResponse = zod.object({
   "posts": zod.array(zod.object({
   "id": zod.string(),
@@ -49,7 +52,9 @@ export const ListPostsResponse = zod.object({
   "titleUr": zod.string().nullish(),
   "bodyUr": zod.string().nullish(),
   "titleAr": zod.string().nullish(),
-  "bodyAr": zod.string().nullish()
+  "bodyAr": zod.string().nullish(),
+  "likesCount": zod.number().default(listPostsResponsePostsItemLikesCountDefault),
+  "viewsCount": zod.number().default(listPostsResponsePostsItemViewsCountDefault)
 })),
   "total": zod.number(),
   "page": zod.number(),
@@ -75,6 +80,9 @@ export const GetPostParams = zod.object({
   "id": zod.coerce.string()
 })
 
+export const getPostResponseLikesCountDefault = 0;
+export const getPostResponseViewsCountDefault = 0;
+
 export const GetPostResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
@@ -93,7 +101,35 @@ export const GetPostResponse = zod.object({
   "titleUr": zod.string().nullish(),
   "bodyUr": zod.string().nullish(),
   "titleAr": zod.string().nullish(),
-  "bodyAr": zod.string().nullish()
+  "bodyAr": zod.string().nullish(),
+  "likesCount": zod.number().default(getPostResponseLikesCountDefault),
+  "viewsCount": zod.number().default(getPostResponseViewsCountDefault)
+})
+
+
+/**
+ * @summary Increment likes count for a post
+ */
+export const LikePostParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const LikePostResponse = zod.object({
+  "likesCount": zod.number(),
+  "viewsCount": zod.number().optional()
+})
+
+
+/**
+ * @summary Increment view count for a post (call once per device per post)
+ */
+export const ViewPostParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const ViewPostResponse = zod.object({
+  "likesCount": zod.number(),
+  "viewsCount": zod.number().optional()
 })
 
 
@@ -158,6 +194,9 @@ export const ApprovePostParams = zod.object({
   "id": zod.coerce.string()
 })
 
+export const approvePostResponseLikesCountDefault = 0;
+export const approvePostResponseViewsCountDefault = 0;
+
 export const ApprovePostResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
@@ -176,7 +215,9 @@ export const ApprovePostResponse = zod.object({
   "titleUr": zod.string().nullish(),
   "bodyUr": zod.string().nullish(),
   "titleAr": zod.string().nullish(),
-  "bodyAr": zod.string().nullish()
+  "bodyAr": zod.string().nullish(),
+  "likesCount": zod.number().default(approvePostResponseLikesCountDefault),
+  "viewsCount": zod.number().default(approvePostResponseViewsCountDefault)
 })
 
 

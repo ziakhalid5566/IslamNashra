@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useColors } from '@/hooks/useColors';
 import { Ionicons } from '@expo/vector-icons';
@@ -5,8 +6,12 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Post } from '@workspace/api-client-react/src/generated/api.schemas';
+import { useLikePost } from '@workspace/api-client-react';
 import { type Language, getLocalizedContent } from '@/contexts/LanguageContext';
+
+const LIKED_KEY = 'liked_post_ids';
 
 export const timeAgo = (iso: string) => {
   const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -22,6 +27,12 @@ export const expiresIn = (iso: string) => {
   return 'Expires in ' + Math.floor(hrs / 24) + 'd';
 };
 
+export function formatCount(n: number): string {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  return String(n);
+}
+
 interface NewsCardProps {
   post: Post;
   language: Language;
@@ -30,6 +41,40 @@ interface NewsCardProps {
 export function NewsCard({ post, language }: NewsCardProps) {
   const colors = useColors();
   const { title, body } = getLocalizedContent(post, language);
+  const [isLiked, setIsLiked] = useState(false);
+  const [localLikes, setLocalLikes] = useState(post.likesCount ?? 0);
+  const likeMutation = useLikePost();
+
+  // Load liked state from AsyncStorage
+  useEffect(() => {
+    AsyncStorage.getItem(LIKED_KEY).then((raw) => {
+      if (!raw) return;
+      try {
+        const ids: string[] = JSON.parse(raw);
+        if (ids.includes(post.id)) setIsLiked(true);
+      } catch {}
+    });
+  }, [post.id]);
+
+  const handleLike = useCallback(async () => {
+    if (isLiked) return; // already liked — one like per device
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setIsLiked(true);
+    setLocalLikes((n) => n + 1);
+    try {
+      // Persist to AsyncStorage
+      const raw = await AsyncStorage.getItem(LIKED_KEY);
+      const ids: string[] = raw ? JSON.parse(raw) : [];
+      ids.push(post.id);
+      await AsyncStorage.setItem(LIKED_KEY, JSON.stringify(ids));
+      // Tell the server
+      await likeMutation.mutateAsync({ id: post.id });
+    } catch {
+      // Rollback on error
+      setIsLiked(false);
+      setLocalLikes((n) => n - 1);
+    }
+  }, [isLiked, post.id, likeMutation]);
 
   const handlePressIn = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -63,12 +108,7 @@ export function NewsCard({ post, language }: NewsCardProps) {
                 />
               </View>
             ) : (
-              <View
-                style={[
-                  styles.noImageContainer,
-                  { backgroundColor: colors.primary },
-                ]}
-              >
+              <View style={[styles.noImageContainer, { backgroundColor: colors.primary }]}>
                 <Ionicons name="newspaper" size={48} color="rgba(255,255,255,0.2)" />
               </View>
             )}
@@ -111,24 +151,53 @@ export function NewsCard({ post, language }: NewsCardProps) {
                   <Text style={[styles.timeText, { color: colors.mutedForeground }]}>
                     {timeAgo(post.publishedAt)}
                   </Text>
-                  <Text style={[styles.timeText, { color: colors.mutedForeground }]}>
-                    •
-                  </Text>
+                  <Text style={[styles.timeText, { color: colors.mutedForeground }]}>•</Text>
                   <Text style={[styles.timeText, { color: colors.mutedForeground }]}>
                     {expiresIn(post.expiresAt)}
                   </Text>
                 </View>
-                {post.isBreaking && (
-                  <View
-                    style={[styles.breakingBadge, { backgroundColor: colors.destructive }]}
-                  >
-                    <Text
-                      style={[styles.breakingText, { color: colors.destructiveForeground }]}
-                    >
-                      BREAKING
+
+                <View style={styles.engagementRow}>
+                  {/* View count */}
+                  <View style={styles.engagementItem}>
+                    <Ionicons name="eye-outline" size={14} color={colors.mutedForeground} />
+                    <Text style={[styles.engagementText, { color: colors.mutedForeground }]}>
+                      {formatCount(post.viewsCount ?? 0)}
                     </Text>
                   </View>
-                )}
+
+                  {/* Like button */}
+                  <Pressable
+                    onPress={(e) => {
+                      e.preventDefault(); // stop Link navigation
+                      handleLike();
+                    }}
+                    style={styles.engagementItem}
+                    hitSlop={8}
+                  >
+                    <Ionicons
+                      name={isLiked ? 'heart' : 'heart-outline'}
+                      size={14}
+                      color={isLiked ? '#e53e3e' : colors.mutedForeground}
+                    />
+                    <Text
+                      style={[
+                        styles.engagementText,
+                        { color: isLiked ? '#e53e3e' : colors.mutedForeground },
+                      ]}
+                    >
+                      {formatCount(localLikes)}
+                    </Text>
+                  </Pressable>
+
+                  {post.isBreaking && (
+                    <View style={[styles.breakingBadge, { backgroundColor: colors.destructive }]}>
+                      <Text style={[styles.breakingText, { color: colors.destructiveForeground }]}>
+                        BREAKING
+                      </Text>
+                    </View>
+                  )}
+                </View>
               </View>
             </View>
           </View>
@@ -151,51 +220,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  imageContainer: {
-    height: 180,
-    width: '100%',
-    position: 'relative',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  imageGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 60,
-  },
-  noImageContainer: {
-    height: 120,
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  contentContainer: {
-    padding: 16,
-  },
+  imageContainer: { height: 180, width: '100%', position: 'relative' },
+  image: { width: '100%', height: '100%' },
+  imageGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 60 },
+  noImageContainer: { height: 120, width: '100%', alignItems: 'center', justifyContent: 'center' },
+  contentContainer: { padding: 16 },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 100,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    fontFamily: 'Inter_700Bold',
-  },
-  aiLabel: {
-    fontSize: 10,
-    fontFamily: 'Inter_400Regular',
-  },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 100 },
+  badgeText: { fontSize: 12, fontWeight: 'bold', fontFamily: 'Inter_700Bold' },
+  aiLabel: { fontSize: 10, fontFamily: 'Inter_400Regular' },
   title: {
     fontSize: 17,
     fontWeight: 'bold',
@@ -207,31 +245,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter_400Regular',
     lineHeight: 20,
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  rtlText: {
-    textAlign: 'right',
-    writingDirection: 'rtl',
-  },
+  rtlText: { textAlign: 'right', writingDirection: 'rtl' },
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  footerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  timeText: {
-    fontSize: 12,
-    fontFamily: 'Inter_400Regular',
-  },
-  breakingBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
+  footerLeft: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  timeText: { fontSize: 12, fontFamily: 'Inter_400Regular' },
+  engagementRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  engagementItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  engagementText: { fontSize: 12, fontFamily: 'Inter_500Medium' },
+  breakingBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   breakingText: {
     fontSize: 10,
     fontWeight: 'bold',
