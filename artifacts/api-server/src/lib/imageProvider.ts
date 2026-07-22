@@ -1,20 +1,11 @@
 /**
  * Swappable image provider module.
  *
- * Currently uses Google Custom Search JSON API (free tier: 100 searches/day).
- * Daily budget is enforced at the job level (see newsGenerationJob.ts).
+ * Currently uses the Pexels API (free tier: 200 req/hour, 20,000/month).
+ * No billing required — just a free API key from pexels.com/api.
  *
  * To swap providers later, replace the body of `fetchImage` below.
- * Possible alternatives: Pexels API, Pixabay API, AI-generated images.
- *
- * IMPORTANT: Rotating multiple Google API accounts/keys to bypass the 100/day quota
- * may violate Google's Terms of Service. The single-account limit is the recommended
- * safe default. Use multi-account rotation at your own risk.
- *
- * Images are stored as URLs only (not downloaded to storage). They are displayed
- * for up to 72 hours before the post auto-deletes, reducing but not eliminating
- * copyright exposure. An attribution note "Image via Google Search" is included
- * in the attribution field for transparency.
+ * The interface stays the same: fetchImage(query) → { url, attribution } | null
  */
 
 import { logger } from "./logger";
@@ -25,47 +16,87 @@ export interface ImageResult {
 }
 
 /**
- * Fetch a relevant image for a news article.
- * Returns null if no image is found or the API is not configured.
+ * Fetch a relevant image for a news article using the Pexels API.
+ * Returns null if no image is found or PEXELS_API_KEY is not configured.
  */
 export async function fetchImage(query: string): Promise<ImageResult | null> {
-  const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
-  const engineId = process.env.GOOGLE_SEARCH_ENGINE_ID;
+  const apiKey = process.env.PEXELS_API_KEY;
 
-  if (!apiKey || !engineId) {
+  if (!apiKey) {
+    logger.warn("imageProvider: PEXELS_API_KEY not set — image fetching disabled");
     return null;
   }
 
   try {
-    const searchQuery = encodeURIComponent(`${query} mosque Muslim`);
-    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${engineId}&q=${searchQuery}&searchType=image&num=1&safe=active&imgType=photo`;
+    // Append "Islamic" to the query to bias towards relevant imagery
+    const searchQuery = encodeURIComponent(`${query} Islamic`);
+    const url = `https://api.pexels.com/v1/search?query=${searchQuery}&per_page=1&orientation=landscape`;
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: { Authorization: apiKey },
+    });
+
     if (!response.ok) {
       let errBody: unknown;
       try { errBody = await response.json(); } catch { errBody = null; }
       logger.error(
         { status: response.status, statusText: response.statusText, body: errBody },
-        "imageProvider: Google CSE request failed",
+        "imageProvider: Pexels API request failed",
       );
       return null;
     }
 
     const data = (await response.json()) as {
-      items?: Array<{ link: string; title?: string }>;
+      photos?: Array<{
+        src: { large: string; medium: string };
+        photographer: string;
+        photographer_url: string;
+      }>;
+      total_results?: number;
     };
 
-    if (!data.items || data.items.length === 0) {
-      logger.warn({ query }, "imageProvider: Google CSE returned no image results");
-      return null;
+    if (!data.photos || data.photos.length === 0) {
+      // Try a broader fallback query: just "mosque"
+      logger.warn({ query }, "imageProvider: Pexels returned no results, trying fallback query");
+      return fetchFallback(apiKey);
     }
 
+    const photo = data.photos[0];
     return {
-      url: data.items[0].link,
-      attribution: "Image via Google Search",
+      url: photo.src.large,
+      attribution: `Photo by ${photo.photographer} on Pexels`,
     };
   } catch (err) {
-    logger.error({ err }, "imageProvider: unexpected error during image fetch");
+    logger.error({ err }, "imageProvider: unexpected error during Pexels fetch");
+    return null;
+  }
+}
+
+/** Fallback to a generic mosque photo if the topic-specific query returns nothing. */
+async function fetchFallback(apiKey: string): Promise<ImageResult | null> {
+  try {
+    const response = await fetch(
+      "https://api.pexels.com/v1/search?query=mosque&per_page=5&orientation=landscape",
+      { headers: { Authorization: apiKey } },
+    );
+    if (!response.ok) return null;
+
+    const data = (await response.json()) as {
+      photos?: Array<{
+        src: { large: string };
+        photographer: string;
+      }>;
+    };
+
+    if (!data.photos || data.photos.length === 0) return null;
+
+    // Pick a random one of the 5 so articles don't all get the same fallback image
+    const photo = data.photos[Math.floor(Math.random() * data.photos.length)];
+    return {
+      url: photo.src.large,
+      attribution: `Photo by ${photo.photographer} on Pexels`,
+    };
+  } catch {
     return null;
   }
 }
