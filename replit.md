@@ -1,6 +1,6 @@
-# [Project name]
+# IslamNashra
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+An AI-powered global Islamic news platform that auto-generates short news articles about Muslim communities worldwide, auto-expires them after 72 hours, and delivers them via a polished Expo mobile app.
 
 ## Run & Operate
 
