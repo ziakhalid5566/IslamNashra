@@ -18,18 +18,19 @@ interface LanguageContextType {
 }
 
 const LanguageContext = createContext<LanguageContextType>({
-  language: 'ur',
+  language: 'en',
   setLanguage: async () => {},
 });
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>('ur');
+  const [language, setLanguageState] = useState<Language>('en');
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((stored) => {
       if (stored === 'ur' || stored === 'ar' || stored === 'en') {
         setLanguageState(stored);
       }
+      // If nothing stored yet, default stays 'en' (already set above)
     });
   }, []);
 

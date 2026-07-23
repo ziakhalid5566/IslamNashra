@@ -65,15 +65,17 @@ Ensure variety in geography and topic — do not repeat the same region or theme
 
 For each item, produce a JSON object with ALL of these fields:
 - "title_en": Concise English headline (max 15 words, no sensationalism)
-- "body_en": 60-80 word factual English summary. General context, no fabricated specifics.
-- "title_ur": Urdu headline (natural translation)
-- "body_ur": 60-80 word Urdu summary (natural Urdu, not literal translation)
-- "title_ar": Arabic headline (natural translation)
-- "body_ar": 60-80 word Arabic summary (natural Arabic, not literal translation)
+- "body_en": 120-160 word detailed English summary. Cover background context, current developments, and significance. No fabricated specifics or invented quotes.
+- "title_ur": Urdu headline — written in PURE standard Urdu script only. Use common Urdu vocabulary. NEVER mix English words written in Urdu script (e.g. do not write "ٹرمپ نے میٹنگ کی" — instead write "امریکی صدر نے اجلاس کیا"). NEVER use garbled or incomplete Urdu words.
+- "body_ur": 120-160 word Urdu summary. Write in PURE, CLEAN, READABLE Urdu. Use simple everyday Urdu vocabulary that any Urdu reader can understand. NEVER mix Roman letters, English abbreviations, or technical jargon transliterated into Urdu. Each sentence must be grammatically complete in Urdu. If a concept has no clean Urdu word, describe it in Urdu rather than transliterating it.
+- "title_ar": Arabic headline (formal Modern Standard Arabic, natural phrasing)
+- "body_ar": 120-160 word Arabic summary in clear Modern Standard Arabic. Formal newspaper register.
 - "category": Exactly one of: "World", "Palestine", "South Asia", "Scholars", "Community"
 - "significanceScore": Integer 1-10 (1 = minor community news, 10 = major international event)
 - "sourceNote": Always "Compiled from multiple international sources"
 - "isBreaking": boolean — true ONLY for significanceScore >= 9
+
+CRITICAL for Urdu: Every Urdu sentence must be complete, correct, and readable by a native Urdu speaker. No hybrid words. No transliterated English.
 
 Return ONLY a valid JSON array with exactly 5 objects. No markdown, no preamble, no explanation.`;
 
