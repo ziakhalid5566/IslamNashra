@@ -5,7 +5,7 @@
  * optionally fetches images for high-significance articles,
  * and publishes to the posts table.
  *
- * Image budget: DAILY_IMAGE_BUDGET images per day (Google Custom Search free tier).
+ * Image budget: DAILY_IMAGE_BUDGET images per day (Pexels free tier: 20,000/month).
  * Articles with significanceScore >= IMAGE_SCORE_THRESHOLD get image priority.
  */
 
@@ -18,8 +18,8 @@ import { sendPushNotifications } from "../lib/pushNotifications";
 import { logger } from "../lib/logger";
 import { eq } from "drizzle-orm";
 
-// Daily image budget — keep under Google Custom Search free tier (100/day)
-const DAILY_IMAGE_BUDGET = 90;
+// Daily image budget — Pexels free tier is 20,000/month so 600/day is safe
+const DAILY_IMAGE_BUDGET = 500;
 // Only fetch images for articles at or above this significance score
 const IMAGE_SCORE_THRESHOLD = 6;
 // 72-hour TTL for all posts
@@ -86,7 +86,7 @@ export async function runNewsGenerationJob(): Promise<void> {
         article.significanceScore >= IMAGE_SCORE_THRESHOLD;
 
       if (eligible) {
-        const img = await fetchImage(`${article.category} ${article.title}`);
+        const img = await fetchImage({ titleEn: article.title_en, category: article.category });
         if (img) {
           imageUrl = img.url;
           hasImage = true;
