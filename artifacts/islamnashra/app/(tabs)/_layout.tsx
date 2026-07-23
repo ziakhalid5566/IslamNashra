@@ -1,12 +1,14 @@
 import React from 'react';
-import { Platform, StyleSheet, useColorScheme, View } from 'react-native';
+import { Platform, StyleSheet, useColorScheme, View, Text } from 'react-native';
 import { useColors } from '@/hooks/useColors';
 import { Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
 import { Tabs } from 'expo-router';
 import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
 import { SymbolView } from 'expo-symbols';
+import { useNotifications } from '@/contexts/NotificationsContext';
 
 // IMPORTANT: iOS 26 uses NativeTabs for native tabs with liquid glass support.
 // NativeTabs intentionally does NOT use custom design tokens — liquid glass
@@ -18,6 +20,14 @@ function NativeTabLayout() {
       <NativeTabs.Trigger name="index">
         <Icon sf={{ default: 'newspaper', selected: 'newspaper.fill' }} />
         <Label>Feed</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="search">
+        <Icon sf={{ default: 'magnifyingglass', selected: 'magnifyingglass' }} />
+        <Label>Search</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="notifications">
+        <Icon sf={{ default: 'bell', selected: 'bell.fill' }} />
+        <Label>Alerts</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="settings">
         <Icon sf={{ default: 'gear', selected: 'gear' }} />
@@ -33,6 +43,7 @@ function ClassicTabLayout() {
   const isDark = colorScheme === 'dark';
   const isIOS = Platform.OS === 'ios';
   const isWeb = Platform.OS === 'web';
+  const { unreadCount } = useNotifications();
 
   return (
     <Tabs
@@ -74,6 +85,32 @@ function ClassicTabLayout() {
               <SymbolView name="newspaper" tintColor={color} size={24} />
             ) : (
               <Feather name="file-text" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="search"
+        options={{
+          title: 'Search',
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="magnifyingglass" tintColor={color} size={24} />
+            ) : (
+              <Feather name="search" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          title: 'Alerts',
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.primary, fontSize: 11 },
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="bell" tintColor={color} size={24} />
+            ) : (
+              <Ionicons name="notifications-outline" size={22} color={color} />
             ),
         }}
       />

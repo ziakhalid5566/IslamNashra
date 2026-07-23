@@ -16,6 +16,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import * as Notifications from 'expo-notifications';
 import { setBaseUrl } from '@workspace/api-client-react';
 import { LanguageProvider } from '@/contexts/LanguageContext';
+import { NotificationsProvider } from '@/contexts/NotificationsContext';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 // How push notifications are handled when the app is in the foreground.
@@ -79,7 +80,11 @@ export default function RootLayout() {
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <LanguageProvider>
-            <AppWithPush />
+            {/* NotificationsProvider must be inside QueryClientProvider
+                (it uses Notifications listener) and inside LanguageProvider */}
+            <NotificationsProvider>
+              <AppWithPush />
+            </NotificationsProvider>
           </LanguageProvider>
         </QueryClientProvider>
       </ErrorBoundary>
