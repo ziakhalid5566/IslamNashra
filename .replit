@@ -1,4 +1,4 @@
-modules = ["nodejs-24"]
+modules = ["nodejs-24", "python-base-3.13", "postgresql-16"]
 
 [deployment]
 router = "application"
@@ -18,3 +18,12 @@ expertMode = true
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+EXPO_PUBLIC_DOMAIN = "09959cfc-62b2-466d-be96-dae2ce73b61e-00-8gjgqr6r9d3b.sisko.replit.dev"
+GOOGLE_SEARCH_ENGINE_ID = "3544a7ff0023d4236"
+
+[nix]
+channel = "stable-25_05"
