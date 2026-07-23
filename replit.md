@@ -1,67 +1,76 @@
-# IslamNashra — AI-Powered Islamic News Platform
+# IslamNashra
 
-> عالمی اسلامی خبریں، ہر لمحہ اپڈیٹ — Global Islamic News, Updated in Real-Time
+اسلامی خبریں — AI سے تیار کردہ عالمی اسلامی نیوز پلیٹ فارم۔ اردو، عربی اور انگریزی میں خودکار خبریں۔
 
-Full-stack mobile + web app: Express API auto-generates AI-written Islamic news via Groq, and an Expo React Native mobile app displays the feed.
+## Run & Operate
 
----
+- `pnpm --filter @workspace/islamnashra run dev` — Expo موبائل ایپ (port 20173)
+- `pnpm --filter @workspace/api-server run dev` — API server (port 8080)
+- `pnpm run typecheck` — full typecheck across all packages
+- `pnpm run build` — typecheck + build all packages
+- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
+- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 
-## Architecture
+## Stack
 
-```
-artifacts/
-  api-server/      Express API + node-cron jobs (news generation, auto-delete)
-  islamnashra/     Expo React Native mobile app (Expo Router)
-  mockup-sandbox/  Vite dev server for UI component previews (Canvas)
+- pnpm workspaces, Node.js 24, TypeScript 5.9
+- Mobile: Expo (React Native) with Expo Router
+- API: Express 5
+- DB: PostgreSQL + Drizzle ORM
+- AI: Groq SDK (news generation in EN/UR/AR)
+- Validation: Zod (`zod/v4`), `drizzle-zod`
+- API codegen: Orval (from OpenAPI spec)
+- Build: esbuild (CJS bundle)
 
-lib/
-  db/              Drizzle ORM schema + PostgreSQL (Replit built-in)
-  api-spec/        OpenAPI 3.1 spec (source of truth for client generation)
-  api-client-react/ Generated React Query hooks (auto-generated from spec)
-  api-zod/         Generated Zod validation schemas (auto-generated from spec)
-```
+## Where things live
 
-## Running the Project
+- `artifacts/islamnashra/` — Expo mobile app
+  - `app/(tabs)/` — Feed, Search, Notifications, Settings screens
+  - `app/post/[id].tsx` — Post detail screen
+  - `components/NewsCard.tsx` — main news card component
+  - `contexts/LanguageContext.tsx` — multi-language (UR/AR/EN)
+  - `contexts/NotificationsContext.tsx` — push notification state
+  - `constants/colors.ts` — design tokens (light + dark mode)
+- `artifacts/api-server/src/` — Express backend
+  - `routes/posts.ts` — CRUD + likes/views
+  - `routes/preferences.ts` — push notification registration
+  - `routes/admin.ts` — content moderation
+  - `jobs/newsGenerationJob.ts` — AI news generation (every 45 min)
+  - `jobs/autoDeleteJob.ts` — expired post cleanup (every 15 min)
+  - `lib/newsGenerator.ts` — Groq AI integration
+  - `lib/imageProvider.ts` — Pexels image search
+  - `lib/pushNotifications.ts` — Expo push notifications
+- `lib/db/src/schema/` — DB schema (posts, userPreferences, flaggedPosts)
+- `lib/api-spec/openapi.yaml` — OpenAPI contract (source of truth)
+- `lib/api-client-react/` — generated React Query hooks
 
-Three workflows start automatically:
+## Architecture decisions
 
-| Workflow | Command | What it does |
-|---|---|---|
-| `artifacts/api-server: API Server` | `pnpm --filter @workspace/api-server run dev` | Builds & starts Express API on port 8080. Runs cron jobs: news generation every 45 min, auto-delete every 15 min. |
-| `artifacts/islamnashra: expo` | `pnpm --filter @workspace/islamnashra run dev` | Starts Expo dev server. Scan QR in Expo Go app, or use web preview. |
-| `artifacts/mockup-sandbox: Component Preview Server` | `pnpm --filter @workspace/mockup-sandbox run dev` | Vite dev server for canvas component previews. |
+- AI news generated entirely by Groq (not real RSS/scraping) — summaries labeled "AI-Generated Summary" in UI
+- Multi-language in single Groq call to minimize API cost
+- Pexels for images (free, no billing required)
+- AsyncStorage for device-local state (liked posts, language preference)
+- Push notifications via Expo server SDK
 
-## Database
+## Product
 
-Uses Replit's built-in PostgreSQL (`DATABASE_URL` is auto-provisioned).
+- **Feed** — اسلامی خبریں (World, Palestine, South Asia, Scholars, Community)
+- **Search** — instant search with breaking/trending pinned
+- **Notifications** — push notification inbox
+- **Settings** — language, notification preferences
 
-To push schema changes: `pnpm --filter @workspace/db exec drizzle-kit push`
+## User preferences
 
-Tables: `posts`, `flagged_posts`, `user_preferences`
+- GitHub repo: https://github.com/ziakhalid5566/IslamNashra.git
 
-## Required Secrets
+## Gotchas
 
-All set as Replit Secrets:
+- GROQ_API_KEY required for news generation (set in Replit Secrets)
+- GITHUB_TOKEN required for git push (set in Replit Secrets)
+- Pexels API key may be needed for image search (PEXELS_API_KEY)
+- Required env: `DATABASE_URL` — Postgres connection string (runtime-managed)
 
-| Secret | Purpose |
-|---|---|
-| `GROQ_API_KEY` | AI article generation via Groq |
-| `GOOGLE_SEARCH_API_KEY` | Image fetching via Google Custom Search |
-| `GOOGLE_SEARCH_ENGINE_ID` | Google CSE ID (cx value) |
-| `SESSION_SECRET` | Express session signing |
+## Pointers
 
-## Key Files
-
-- `artifacts/api-server/src/jobs/newsGenerationJob.ts` — AI → moderation → publish pipeline
-- `artifacts/api-server/src/lib/imageProvider.ts` — Swappable image provider (swap to Pexels/Pixabay here)
-- `artifacts/api-server/src/lib/contentModeration.ts` — Keyword/pattern filter before publish
-- `lib/api-spec/openapi.yaml` — OpenAPI spec; regenerate client with `pnpm --filter @workspace/api-spec run generate`
-
-## GitHub
-
-Remote: `https://github.com/ziakhalid5566/IslamNashra`
-
-## User Preferences
-
-- Keep the project's existing monorepo structure (pnpm workspace).
-- Use Replit's built-in PostgreSQL; do not switch to external providers unless asked.
+- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- See `SECRETS_CHECKLIST.md` for all required API keys
