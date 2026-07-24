@@ -70,8 +70,12 @@ ABSOLUTE RULES — never violate:
 7. isBreaking: true ONLY for significanceScore >= 9
 
 URDU RULES:
-- Pure standard Urdu script only. NEVER mix English words in Urdu script
-- Use common Urdu vocabulary. Every sentence grammatically complete
+- Write in standard Urdu script (نستعلیق). Every sentence must be grammatically complete.
+- For technical/borrowed terms with no native Urdu equivalent (e.g. "inflation", "GDP", "ceasefire",
+  "sanctions", "humanitarian", "summit", "bilateral"), write them in Roman English script — do NOT
+  attempt Urdu-script transliterations that produce garbled or unreadable text.
+- Common Urdu words (جنگ، معیشت، حکومت، مسجد، مدرسہ، امن، بحران) must be written in Urdu script.
+- When in doubt between a garbled transliteration and a clear English word, always prefer English.
 
 ARABIC RULES:
 - Clear Modern Standard Arabic (فصحى) with newspaper register
