@@ -9,15 +9,34 @@ import {
   Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
 import { useListPosts } from '@workspace/api-client-react';
 import { NewsCard } from '@/components/NewsCard';
 import { SkeletonCard } from '@/components/SkeletonCard';
-import { Ionicons } from '@expo/vector-icons';
 import type { Post } from '@workspace/api-client-react/src/generated/api.schemas';
 import { useLanguage, LANGUAGE_OPTIONS, type Language } from '@/contexts/LanguageContext';
+import { Link } from 'expo-router';
+import { useNotifications } from '@/contexts/NotificationsContext';
 
-const CATEGORIES = ['All', 'World', 'Palestine', 'South Asia', 'Scholars', 'Community'];
+// ─── Category config ──────────────────────────────────────────────────────────
+const CATEGORIES = [
+  { key: 'All',           label: 'سب',          emoji: '🌐' },
+  { key: 'World',         label: 'عالمی',        emoji: '🌍' },
+  { key: 'Palestine',     label: 'فلسطین',       emoji: '🇵🇸' },
+  { key: 'South Asia',    label: 'جنوبی ایشیا',  emoji: '🌏' },
+  { key: 'Economy',       label: 'معیشت',        emoji: '💰' },
+  { key: 'Government',    label: 'حکومت',        emoji: '🏛️' },
+  { key: 'Security',      label: 'سیکیورٹی',    emoji: '🛡️' },
+  { key: 'Scholars',      label: 'علماء',        emoji: '📚' },
+  { key: 'Mosques',       label: 'مساجد',        emoji: '🕌' },
+  { key: 'Madrassas',     label: 'مدارس',        emoji: '🎓' },
+  { key: 'Africa',        label: 'افریقہ',       emoji: '🌍' },
+  { key: 'Southeast Asia',label: 'جنوب مشرقی',  emoji: '🏝️' },
+  { key: 'Turkey',        label: 'ترکی',         emoji: '🇹🇷' },
+  { key: 'Community',     label: 'کمیونٹی',      emoji: '👥' },
+];
 
 const LANG_META: Record<Language, { flag: string; short: string }> = {
   en: { flag: '🇬🇧', short: 'EN' },
@@ -25,23 +44,21 @@ const LANG_META: Record<Language, { flag: string; short: string }> = {
   ar: { flag: '🇸🇦', short: 'عربي' },
 };
 
+// ─── Component ────────────────────────────────────────────────────────────────
 export default function FeedScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const { language, setLanguage } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { unreadCount } = useNotifications();
 
   const { data, isLoading, refetch, isError } = useListPosts(
     {
       category: selectedCategory === 'All' ? undefined : selectedCategory,
-      limit: 20,
+      limit: 30,
     },
-    {
-      query: {
-        queryKey: ['posts', selectedCategory],
-      },
-    }
+    { query: { queryKey: ['posts', selectedCategory] } }
   );
 
   const onRefresh = useCallback(async () => {
@@ -50,28 +67,48 @@ export default function FeedScreen() {
     setIsRefreshing(false);
   }, [refetch]);
 
+  // Breaking news posts for ticker
+  const breakingPosts = data?.posts?.filter((p) => p.isBreaking) ?? [];
+
   const renderHeader = () => (
-    <View style={[styles.header, { paddingTop: insets.top + 6, backgroundColor: colors.primary }]}>
+    <LinearGradient
+      colors={[colors.headerGradientStart, colors.headerGradientEnd]}
+      style={[styles.header, { paddingTop: insets.top + 6 }]}
+    >
       {/* Brand row */}
       <View style={styles.brandRow}>
-        {/* Logo mark */}
-        <View style={[styles.logoMark, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
+        {/* Logo */}
+        <View style={[styles.logoWrap, { backgroundColor: 'rgba(255,255,255,0.12)' }]}>
           <Text style={styles.logoEmoji}>☪️</Text>
         </View>
 
-        {/* Title stack */}
+        {/* Title */}
         <View style={styles.titleStack}>
           <Text style={[styles.titleMain, { color: colors.primaryForeground }]}>
             IslamNashra
           </Text>
-          <Text style={[styles.titleSub, { color: 'rgba(255,255,255,0.6)' }]}>
+          <Text style={[styles.titleSub, { color: 'rgba(255,255,255,0.55)' }]}>
             اسلامی خبریں • Global Islamic News
           </Text>
         </View>
+
+        {/* Notification bell */}
+        <Link href="/notifications" asChild>
+          <Pressable style={styles.bellBtn} hitSlop={8}>
+            <Ionicons name="notifications-outline" size={22} color="rgba(255,255,255,0.85)" />
+            {unreadCount > 0 && (
+              <View style={[styles.badge, { backgroundColor: colors.destructive }]}>
+                <Text style={styles.badgeText}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Text>
+              </View>
+            )}
+          </Pressable>
+        </Link>
       </View>
 
-      {/* Language switcher — pill style */}
-      <View style={[styles.langPill, { backgroundColor: 'rgba(0,0,0,0.2)' }]}>
+      {/* Language switcher */}
+      <View style={[styles.langPill, { backgroundColor: 'rgba(0,0,0,0.25)' }]}>
         {LANGUAGE_OPTIONS.map((opt) => {
           const active = language === opt.code;
           const meta = LANG_META[opt.code];
@@ -80,15 +117,16 @@ export default function FeedScreen() {
               key={opt.code}
               onPress={() => setLanguage(opt.code)}
               style={[
-                styles.langSegment,
-                active && { backgroundColor: colors.primaryForeground },
+                styles.langSeg,
+                active && { backgroundColor: 'rgba(255,255,255,0.2)' },
               ]}
             >
               <Text style={styles.langFlag}>{meta.flag}</Text>
               <Text
                 style={[
                   styles.langLabel,
-                  { color: active ? colors.primary : 'rgba(255,255,255,0.75)' },
+                  { color: active ? '#FFFFFF' : 'rgba(255,255,255,0.6)' },
+                  active && { fontFamily: 'Inter_700Bold' },
                 ]}
               >
                 {meta.short}
@@ -98,42 +136,51 @@ export default function FeedScreen() {
         })}
       </View>
 
-      {/* Slim divider */}
-      <View style={[styles.headerDivider, { backgroundColor: 'rgba(255,255,255,0.12)' }]} />
-    </View>
+      {/* Breaking news ticker */}
+      {breakingPosts.length > 0 && (
+        <View style={[styles.ticker, { backgroundColor: colors.destructive }]}>
+          <View style={styles.tickerDot} />
+          <Text style={styles.tickerText} numberOfLines={1}>
+            🔴 BREAKING: {breakingPosts[0].titleEn ?? breakingPosts[0].title}
+          </Text>
+        </View>
+      )}
+    </LinearGradient>
   );
 
   const renderCategories = () => (
-    <View style={[styles.categoriesWrapper, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+    <View style={[styles.catWrapper, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoriesContainer}
+        contentContainerStyle={styles.catScroll}
       >
         {CATEGORIES.map((cat) => {
-          const isSelected = selectedCategory === cat;
+          const isActive = selectedCategory === cat.key;
           return (
             <Pressable
-              key={cat}
+              key={cat.key}
+              onPress={() => setSelectedCategory(cat.key)}
               style={[
-                styles.categoryChip,
+                styles.catChip,
                 {
-                  backgroundColor: isSelected ? colors.primary : colors.card,
-                  borderColor: isSelected ? colors.primary : colors.border,
+                  backgroundColor: isActive ? colors.primary : colors.card,
+                  borderColor: isActive ? colors.primary : colors.border,
+                  shadowColor: isActive ? colors.primary : 'transparent',
                 },
               ]}
-              onPress={() => setSelectedCategory(cat)}
             >
+              <Text style={styles.catChipEmoji}>{cat.emoji}</Text>
               <Text
                 style={[
-                  styles.categoryText,
+                  styles.catChipLabel,
                   {
-                    color: isSelected ? colors.primaryForeground : colors.foreground,
-                    fontFamily: isSelected ? 'Inter_600SemiBold' : 'Inter_400Regular',
+                    color: isActive ? colors.primaryForeground : colors.foreground,
+                    fontFamily: isActive ? 'Inter_700Bold' : 'Inter_400Regular',
                   },
                 ]}
               >
-                {cat}
+                {cat.key === 'All' ? cat.key : (language === 'ur' ? cat.label : cat.key)}
               </Text>
             </Pressable>
           );
@@ -142,61 +189,58 @@ export default function FeedScreen() {
     </View>
   );
 
-  const renderItem = ({ item, index }: { item: Post; index: number }) => {
-    const isAd = index > 0 && index % 8 === 0;
-    return (
-      <>
-        {isAd && (
-          <View
-            style={[
-              styles.adPlaceholder,
-              { backgroundColor: colors.card, borderColor: colors.border },
-            ]}
-          >
-            <Text style={[styles.adText, { color: colors.mutedForeground }]}>Sponsored</Text>
-          </View>
-        )}
-        <NewsCard post={item} language={language} />
-      </>
-    );
-  };
+  const renderItem = ({ item }: { item: Post }) => (
+    <NewsCard post={item} language={language} />
+  );
 
   const renderEmpty = () => {
     if (isLoading) {
       return (
-        <View style={styles.listContent}>
+        <View>
           {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
         </View>
       );
     }
     if (isError) {
       return (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="warning-outline" size={48} color={colors.destructive} />
-          <Text style={[styles.emptyText, { color: colors.foreground }]}>Failed to load news.</Text>
-          <Pressable onPress={() => refetch()} style={[styles.retryBtn, { backgroundColor: colors.primary }]}>
-            <Text style={{ color: colors.primaryForeground, fontFamily: 'Inter_600SemiBold' }}>Retry</Text>
+        <View style={styles.emptyBox}>
+          <Ionicons name="warning-outline" size={52} color={colors.destructive} />
+          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
+            Failed to load news
+          </Text>
+          <Pressable
+            onPress={() => refetch()}
+            style={[styles.retryBtn, { backgroundColor: colors.primary }]}
+          >
+            <Text style={{ color: colors.primaryForeground, fontFamily: 'Inter_600SemiBold' }}>
+              Retry
+            </Text>
           </Pressable>
         </View>
       );
     }
     return (
-      <View style={styles.emptyContainer}>
-        <Ionicons name="newspaper-outline" size={48} color={colors.mutedForeground} />
-        <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>Fetching latest news…</Text>
+      <View style={styles.emptyBox}>
+        <Text style={{ fontSize: 48 }}>🕌</Text>
+        <Text style={[styles.emptyTitle, { color: colors.mutedForeground }]}>
+          Fetching latest news…
+        </Text>
+        <Text style={[styles.emptySub, { color: colors.mutedForeground }]}>
+          AI agents are researching global Islamic news
+        </Text>
       </View>
     );
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
       {renderHeader()}
       {renderCategories()}
       <FlatList
-        data={data?.posts || []}
+        data={data?.posts ?? []}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        contentContainerStyle={[styles.listContent, { paddingBottom: 100 }]}
+        contentContainerStyle={[styles.list, { paddingBottom: 100 }]}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -213,9 +257,9 @@ export default function FeedScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  root: { flex: 1 },
 
-  /* ── Header ── */
+  /* Header */
   header: {
     paddingHorizontal: 16,
     paddingBottom: 12,
@@ -227,10 +271,10 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingTop: 4,
   },
-  logoMark: {
+  logoWrap: {
     width: 44,
     height: 44,
-    borderRadius: 12,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -246,7 +290,26 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     marginTop: 1,
   },
-  headerDivider: { height: 1, marginTop: 2 },
+  bellBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  badgeText: { fontSize: 10, fontFamily: 'Inter_700Bold', color: '#FFF' },
 
   /* Language pill */
   langPill: {
@@ -256,7 +319,7 @@ const styles = StyleSheet.create({
     padding: 3,
     gap: 2,
   },
-  langSegment: {
+  langSeg: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -265,34 +328,76 @@ const styles = StyleSheet.create({
     borderRadius: 100,
   },
   langFlag: { fontSize: 14 },
-  langLabel: { fontSize: 13, fontFamily: 'Inter_600SemiBold' },
+  langLabel: { fontSize: 13, fontFamily: 'Inter_500Medium' },
 
-  /* ── Category strip ── */
-  categoriesWrapper: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
+  /* Breaking ticker */
+  ticker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 8,
   },
-  categoriesContainer: {
-    paddingHorizontal: 16,
+  tickerDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#FFF',
+  },
+  tickerText: {
+    flex: 1,
+    fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
+    color: '#FFFFFF',
+  },
+
+  /* Category strip */
+  catWrapper: { borderBottomWidth: StyleSheet.hairlineWidth },
+  catScroll: {
+    paddingHorizontal: 14,
     paddingVertical: 10,
     gap: 8,
   },
-  categoryChip: {
-    paddingHorizontal: 16,
+  catChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 13,
     paddingVertical: 7,
-    borderRadius: 20,
+    borderRadius: 100,
     borderWidth: 1,
+    elevation: 1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
-  categoryText: { fontSize: 13 },
+  catChipEmoji: { fontSize: 13 },
+  catChipLabel: { fontSize: 12 },
 
-  /* ── List ── */
-  listContent: { paddingVertical: 8 },
-  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
-  emptyText: { marginTop: 16, fontSize: 16, fontFamily: 'Inter_400Regular' },
-  retryBtn: { marginTop: 16, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
-  adPlaceholder: {
-    marginHorizontal: 16, marginVertical: 8,
-    height: 80, borderRadius: 8, borderWidth: 1,
-    alignItems: 'center', justifyContent: 'center',
+  /* List */
+  list: { paddingVertical: 8 },
+  emptyBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 80,
+    gap: 12,
+    paddingHorizontal: 40,
   },
-  adText: { fontSize: 12, fontFamily: 'Inter_500Medium', textTransform: 'uppercase' },
+  emptyTitle: {
+    fontSize: 17,
+    fontFamily: 'Inter_600SemiBold',
+    textAlign: 'center',
+  },
+  emptySub: {
+    fontSize: 13,
+    fontFamily: 'Inter_400Regular',
+    textAlign: 'center',
+  },
+  retryBtn: {
+    marginTop: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
 });

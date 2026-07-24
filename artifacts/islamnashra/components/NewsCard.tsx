@@ -13,18 +13,36 @@ import { type Language, getLocalizedContent } from '@/contexts/LanguageContext';
 
 const LIKED_KEY = 'liked_post_ids';
 
+// ─── Category config ──────────────────────────────────────────────────────────
+const CATEGORY_META: Record<string, { emoji: string; color: string; darkColor: string }> = {
+  World:          { emoji: '🌍', color: '#1565C0', darkColor: '#1E88E5' },
+  Palestine:      { emoji: '🇵🇸', color: '#1B5E20', darkColor: '#2E7D32' },
+  'South Asia':   { emoji: '🌏', color: '#4A148C', darkColor: '#7B1FA2' },
+  Economy:        { emoji: '💰', color: '#E65100', darkColor: '#F57C00' },
+  Government:     { emoji: '🏛️', color: '#37474F', darkColor: '#546E7A' },
+  Security:       { emoji: '🛡️', color: '#B71C1C', darkColor: '#C62828' },
+  Scholars:       { emoji: '📚', color: '#004D40', darkColor: '#00695C' },
+  Mosques:        { emoji: '🕌', color: '#0D5235', darkColor: '#1A7A53' },
+  Madrassas:      { emoji: '🎓', color: '#1A237E', darkColor: '#283593' },
+  Africa:         { emoji: '🌍', color: '#33691E', darkColor: '#558B2F' },
+  'Southeast Asia': { emoji: '🏝️', color: '#006064', darkColor: '#00838F' },
+  Turkey:         { emoji: '🇹🇷', color: '#880E4F', darkColor: '#AD1457' },
+  Community:      { emoji: '👥', color: '#4E342E', darkColor: '#6D4C41' },
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 export const timeAgo = (iso: string) => {
   const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
-  if (mins < 60) return mins + 'm ago';
-  if (mins < 1440) return Math.floor(mins / 60) + 'h ago';
-  return Math.floor(mins / 1440) + 'd ago';
+  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1440) return `${Math.floor(mins / 60)}h ago`;
+  return `${Math.floor(mins / 1440)}d ago`;
 };
 
 export const expiresIn = (iso: string) => {
   const hrs = Math.round((new Date(iso).getTime() - Date.now()) / 3600000);
   if (hrs <= 0) return 'Expiring';
-  if (hrs < 24) return 'Expires in ' + hrs + 'h';
-  return 'Expires in ' + Math.floor(hrs / 24) + 'd';
+  if (hrs < 24) return `Exp ${hrs}h`;
+  return `Exp ${Math.floor(hrs / 24)}d`;
 };
 
 export function formatCount(n: number): string {
@@ -33,6 +51,13 @@ export function formatCount(n: number): string {
   return String(n);
 }
 
+// ─── Reading time ─────────────────────────────────────────────────────────────
+function readingTime(body: string) {
+  const words = body.trim().split(/\s+/).length;
+  return Math.max(1, Math.round(words / 200));
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 interface NewsCardProps {
   post: Post;
   language: Language;
@@ -44,8 +69,10 @@ export function NewsCard({ post, language }: NewsCardProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [localLikes, setLocalLikes] = useState(post.likesCount ?? 0);
   const likeMutation = useLikePost();
+  const isRTL = language === 'ur' || language === 'ar';
 
-  // Load liked state from AsyncStorage
+  const catMeta = CATEGORY_META[post.category] ?? { emoji: '📰', color: '#0D5235', darkColor: '#1A7A53' };
+
   useEffect(() => {
     AsyncStorage.getItem(LIKED_KEY).then((raw) => {
       if (!raw) return;
@@ -57,32 +84,25 @@ export function NewsCard({ post, language }: NewsCardProps) {
   }, [post.id]);
 
   const handleLike = useCallback(async () => {
-    if (isLiked) return; // already liked — one like per device
+    if (isLiked) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsLiked(true);
     setLocalLikes((n) => n + 1);
     try {
-      // Persist to AsyncStorage
       const raw = await AsyncStorage.getItem(LIKED_KEY);
       const ids: string[] = raw ? JSON.parse(raw) : [];
       ids.push(post.id);
       await AsyncStorage.setItem(LIKED_KEY, JSON.stringify(ids));
-      // Tell the server
       await likeMutation.mutateAsync({ id: post.id });
     } catch {
-      // Rollback on error
       setIsLiked(false);
       setLocalLikes((n) => n - 1);
     }
   }, [isLiked, post.id, likeMutation]);
 
-  const handlePressIn = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
-
   return (
     <Link href={`/post/${post.id}`} asChild>
-      <Pressable onPressIn={handlePressIn}>
+      <Pressable onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
         {({ pressed }) => (
           <View
             style={[
@@ -90,10 +110,12 @@ export function NewsCard({ post, language }: NewsCardProps) {
               {
                 backgroundColor: colors.card,
                 borderColor: colors.border,
-                opacity: pressed ? 0.9 : 1,
+                opacity: pressed ? 0.92 : 1,
+                shadowColor: colors.primary,
               },
             ]}
           >
+            {/* ── Image section ── */}
             {post.hasImage && post.imageUrl ? (
               <View style={styles.imageContainer}>
                 <Image
@@ -103,101 +125,117 @@ export function NewsCard({ post, language }: NewsCardProps) {
                   transition={200}
                 />
                 <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.7)']}
-                  style={styles.imageGradient}
+                  colors={['transparent', 'transparent', 'rgba(0,0,0,0.72)']}
+                  style={StyleSheet.absoluteFillObject}
                 />
+                {/* Overlaid badges on image */}
+                <View style={[styles.imageBadgeRow, isRTL && styles.rowReverse]}>
+                  <View style={[styles.catPill, { backgroundColor: catMeta.color + 'EE' }]}>
+                    <Text style={styles.catEmoji}>{catMeta.emoji}</Text>
+                    <Text style={styles.catPillText}>{post.category}</Text>
+                  </View>
+                  {post.isBreaking && (
+                    <View style={styles.breakingPill}>
+                      <View style={styles.breakingDot} />
+                      <Text style={styles.breakingPillText}>BREAKING</Text>
+                    </View>
+                  )}
+                </View>
               </View>
             ) : (
-              <View style={[styles.noImageContainer, { backgroundColor: colors.primary }]}>
-                <Ionicons name="newspaper" size={48} color="rgba(255,255,255,0.2)" />
-              </View>
+              /* No image — gradient placeholder */
+              <LinearGradient
+                colors={[catMeta.color, catMeta.darkColor + '88']}
+                style={styles.noImageContainer}
+              >
+                <Text style={styles.noImageEmoji}>{catMeta.emoji}</Text>
+                <View style={[styles.imageBadgeRow, isRTL && styles.rowReverse]}>
+                  <View style={[styles.catPill, { backgroundColor: 'rgba(255,255,255,0.22)' }]}>
+                    <Text style={styles.catEmoji}>{catMeta.emoji}</Text>
+                    <Text style={styles.catPillText}>{post.category}</Text>
+                  </View>
+                  {post.isBreaking && (
+                    <View style={styles.breakingPill}>
+                      <View style={styles.breakingDot} />
+                      <Text style={styles.breakingPillText}>BREAKING</Text>
+                    </View>
+                  )}
+                </View>
+              </LinearGradient>
             )}
 
-            <View style={styles.contentContainer}>
-              <View style={styles.headerRow}>
-                <View style={[styles.badge, { backgroundColor: colors.accent }]}>
-                  <Text style={[styles.badgeText, { color: colors.accentForeground }]}>
-                    {post.category}
-                  </Text>
-                </View>
-                <Text style={[styles.aiLabel, { color: colors.mutedForeground }]}>
-                  AI-Generated Summary
-                </Text>
-              </View>
-
+            {/* ── Content section ── */}
+            <View style={styles.content}>
+              {/* Title */}
               <Text
                 style={[
                   styles.title,
                   { color: colors.cardForeground },
-                  (language === 'ur' || language === 'ar') && styles.rtlText,
+                  isRTL && styles.rtl,
                 ]}
                 numberOfLines={3}
               >
                 {title}
               </Text>
-              <Text
-                style={[
-                  styles.excerpt,
-                  { color: colors.mutedForeground },
-                  (language === 'ur' || language === 'ar') && styles.rtlText,
-                ]}
-                numberOfLines={2}
-              >
-                {body}
-              </Text>
 
-              <View style={styles.footerRow}>
-                <View style={styles.footerLeft}>
-                  <Text style={[styles.timeText, { color: colors.mutedForeground }]}>
+              {/* Excerpt */}
+              {!!body && (
+                <Text
+                  style={[
+                    styles.excerpt,
+                    { color: colors.mutedForeground },
+                    isRTL && styles.rtl,
+                  ]}
+                  numberOfLines={2}
+                >
+                  {body}
+                </Text>
+              )}
+
+              {/* Footer */}
+              <View style={[styles.footer, isRTL && styles.rowReverse]}>
+                {/* Left: time • reading time • expiry */}
+                <View style={[styles.footerLeft, isRTL && styles.rowReverse]}>
+                  <Ionicons name="time-outline" size={12} color={colors.mutedForeground} />
+                  <Text style={[styles.meta, { color: colors.mutedForeground }]}>
                     {timeAgo(post.publishedAt)}
                   </Text>
-                  <Text style={[styles.timeText, { color: colors.mutedForeground }]}>•</Text>
-                  <Text style={[styles.timeText, { color: colors.mutedForeground }]}>
-                    {expiresIn(post.expiresAt)}
+                  <Text style={[styles.meta, { color: colors.border }]}>·</Text>
+                  <Text style={[styles.meta, { color: colors.mutedForeground }]}>
+                    {readingTime(body)} min
                   </Text>
                 </View>
 
-                <View style={styles.engagementRow}>
-                  {/* View count */}
-                  <View style={styles.engagementItem}>
-                    <Ionicons name="eye-outline" size={14} color={colors.mutedForeground} />
-                    <Text style={[styles.engagementText, { color: colors.mutedForeground }]}>
-                      {formatCount(post.viewsCount ?? 0)}
-                    </Text>
-                  </View>
+                {/* Right: views + likes */}
+                <View style={styles.engRow}>
+                  <Ionicons name="eye-outline" size={13} color={colors.mutedForeground} />
+                  <Text style={[styles.engTxt, { color: colors.mutedForeground }]}>
+                    {formatCount(post.viewsCount ?? 0)}
+                  </Text>
 
-                  {/* Like button */}
                   <Pressable
-                    onPress={(e) => {
-                      e.preventDefault(); // stop Link navigation
-                      handleLike();
-                    }}
-                    style={styles.engagementItem}
-                    hitSlop={8}
+                    onPress={(e) => { e.preventDefault(); handleLike(); }}
+                    style={styles.likeBtn}
+                    hitSlop={10}
                   >
                     <Ionicons
                       name={isLiked ? 'heart' : 'heart-outline'}
-                      size={14}
-                      color={isLiked ? '#e53e3e' : colors.mutedForeground}
+                      size={13}
+                      color={isLiked ? '#E53E3E' : colors.mutedForeground}
                     />
-                    <Text
-                      style={[
-                        styles.engagementText,
-                        { color: isLiked ? '#e53e3e' : colors.mutedForeground },
-                      ]}
-                    >
+                    <Text style={[styles.engTxt, { color: isLiked ? '#E53E3E' : colors.mutedForeground }]}>
                       {formatCount(localLikes)}
                     </Text>
                   </Pressable>
-
-                  {post.isBreaking && (
-                    <View style={[styles.breakingBadge, { backgroundColor: colors.destructive }]}>
-                      <Text style={[styles.breakingText, { color: colors.destructiveForeground }]}>
-                        BREAKING
-                      </Text>
-                    </View>
-                  )}
                 </View>
+              </View>
+
+              {/* AI label */}
+              <View style={[styles.aiRow, { borderTopColor: colors.border }]}>
+                <Ionicons name="sparkles" size={11} color={colors.accent} />
+                <Text style={[styles.aiLabel, { color: colors.mutedForeground }]}>
+                  AI-Generated Summary · {expiresIn(post.expiresAt)}
+                </Text>
               </View>
             </View>
           </View>
@@ -209,37 +247,77 @@ export function NewsCard({ post, language }: NewsCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 12,
+    marginHorizontal: 14,
+    marginVertical: 7,
+    borderRadius: 16,
     borderWidth: 1,
     overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
+    elevation: 3,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
   },
-  imageContainer: { height: 180, width: '100%', position: 'relative' },
+
+  /* Image */
+  imageContainer: { height: 200, position: 'relative' },
   image: { width: '100%', height: '100%' },
-  imageGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 60 },
-  noImageContainer: { height: 120, width: '100%', alignItems: 'center', justifyContent: 'center' },
-  contentContainer: { padding: 16 },
-  headerRow: {
+  noImageContainer: { height: 130, alignItems: 'center', justifyContent: 'center' },
+  noImageEmoji: { fontSize: 40, opacity: 0.35, marginBottom: 10 },
+
+  /* Overlay badges */
+  imageBadgeRow: {
+    position: 'absolute',
+    bottom: 10,
+    left: 10,
+    right: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
+    gap: 6,
   },
-  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 100 },
-  badgeText: { fontSize: 12, fontWeight: 'bold', fontFamily: 'Inter_700Bold' },
-  aiLabel: { fontSize: 10, fontFamily: 'Inter_400Regular' },
+  catPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 100,
+  },
+  catEmoji: { fontSize: 12 },
+  catPillText: {
+    fontSize: 11,
+    fontFamily: 'Inter_700Bold',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+  breakingPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 100,
+    backgroundColor: '#C0392B',
+  },
+  breakingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FFFFFF',
+  },
+  breakingPillText: {
+    fontSize: 10,
+    fontFamily: 'Inter_700Bold',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+
+  /* Content */
+  content: { padding: 14 },
   title: {
     fontSize: 17,
-    fontWeight: 'bold',
     fontFamily: 'Inter_700Bold',
-    lineHeight: 22,
-    marginBottom: 8,
+    lineHeight: 24,
+    marginBottom: 6,
   },
   excerpt: {
     fontSize: 14,
@@ -247,22 +325,32 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 12,
   },
-  rtlText: { textAlign: 'right', writingDirection: 'rtl' },
-  footerRow: {
+  rtl: { textAlign: 'right', writingDirection: 'rtl' },
+
+  /* Footer */
+  footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 10,
   },
   footerLeft: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  timeText: { fontSize: 12, fontFamily: 'Inter_400Regular' },
-  engagementRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  engagementItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  engagementText: { fontSize: 12, fontFamily: 'Inter_500Medium' },
-  breakingBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  breakingText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    fontFamily: 'Inter_700Bold',
-    textTransform: 'uppercase',
+  meta: { fontSize: 12, fontFamily: 'Inter_400Regular' },
+  engRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  engTxt: { fontSize: 12, fontFamily: 'Inter_500Medium' },
+  likeBtn: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  rowReverse: { flexDirection: 'row-reverse' },
+
+  /* AI label */
+  aiRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  aiLabel: {
+    fontSize: 11,
+    fontFamily: 'Inter_400Regular',
   },
 });

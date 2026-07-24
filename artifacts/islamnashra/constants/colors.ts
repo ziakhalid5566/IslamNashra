@@ -1,59 +1,68 @@
 /**
- * Semantic design tokens for the mobile app.
- *
- * These tokens mirror the naming conventions used in web artifacts (index.css)
- * so that multi-artifact projects share a cohesive visual identity.
- *
- * Replace the placeholder values below with values that match the project's
- * brand. If a sibling web artifact exists, read its index.css and convert the
- * HSL values to hex so both artifacts use the same palette.
- *
- * To add dark mode, add a `dark` key with the same token names.
- * The useColors() hook will automatically pick it up.
+ * IslamNashra Design Tokens
+ * Deep forest green + warm gold palette — premium Islamic news aesthetic
  */
 
 const colors = {
   light: {
-    background: '#F5F0E8',
+    background: '#F4F0E8',
     foreground: '#0A0A0A',
     card: '#FFFFFF',
-    cardForeground: '#0A0A0A',
-    primary: '#0F5C3F',
+    cardForeground: '#111111',
+    primary: '#0D5235',
     primaryForeground: '#FFFFFF',
-    secondary: '#E8E2D6',
+    primaryLight: '#1A7A53',
+    secondary: '#EDE8DC',
     secondaryForeground: '#1A1A1A',
-    muted: '#E8E2D6',
-    mutedForeground: '#6B6658',
-    accent: '#C9A84C',
-    accentForeground: '#1A1A1A',
+    muted: '#EDE8DC',
+    mutedForeground: '#706858',
+    accent: '#C8A84B',
+    accentForeground: '#1A1A0A',
+    accentLight: '#F5E9B8',
     destructive: '#C0392B',
     destructiveForeground: '#FFFFFF',
-    border: '#D4CDBE',
-    input: '#D4CDBE',
+    success: '#1A7A53',
+    successForeground: '#FFFFFF',
+    border: '#D8D0C0',
+    input: '#D8D0C0',
     text: '#0A0A0A',
-    tint: '#0F5C3F',
+    tint: '#0D5235',
+    headerGradientStart: '#0D5235',
+    headerGradientEnd: '#0A3D27',
+    overlay: 'rgba(0,0,0,0.45)',
+    shimmer1: '#EDE8DC',
+    shimmer2: '#F8F4EC',
   },
   dark: {
-    background: '#0D1117',
-    foreground: '#F0EDE8',
-    card: '#161B22',
-    cardForeground: '#F0EDE8',
+    background: '#0B0F14',
+    foreground: '#F0EDE6',
+    card: '#141A22',
+    cardForeground: '#F0EDE6',
     primary: '#1A7A53',
     primaryForeground: '#FFFFFF',
-    secondary: '#21262D',
-    secondaryForeground: '#E0DDD8',
-    muted: '#21262D',
-    mutedForeground: '#8B949E',
-    accent: '#D4AF5A',
-    accentForeground: '#0D1117',
+    primaryLight: '#22A06B',
+    secondary: '#1E2530',
+    secondaryForeground: '#DDD9D2',
+    muted: '#1E2530',
+    mutedForeground: '#8A95A0',
+    accent: '#D4B055',
+    accentForeground: '#0B0F14',
+    accentLight: '#3A2E10',
     destructive: '#E74C3C',
     destructiveForeground: '#FFFFFF',
-    border: '#30363D',
-    input: '#30363D',
-    text: '#F0EDE8',
+    success: '#22A06B',
+    successForeground: '#FFFFFF',
+    border: '#2A3340',
+    input: '#2A3340',
+    text: '#F0EDE6',
     tint: '#1A7A53',
+    headerGradientStart: '#0D1C14',
+    headerGradientEnd: '#091008',
+    overlay: 'rgba(0,0,0,0.6)',
+    shimmer1: '#1E2530',
+    shimmer2: '#252E3A',
   },
-  radius: 12,
+  radius: 14,
 };
 
 export default colors;
