@@ -333,7 +333,7 @@ async function generateAgentArticlesSafe(
       ],
       model: "llama-3.3-70b-versatile",
       temperature: 0.65,
-      max_tokens: 8000,
+      max_tokens: 2500,
     });
 
     const raw = completion.choices[0]?.message?.content;
@@ -387,8 +387,8 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Run agents in batches of 3 to avoid Groq rate limits, collect all articles */
 export async function generateNewsArticles(): Promise<GeneratedArticle[]> {
-  const BATCH_SIZE = 3;
-  const BATCH_DELAY_MS = 1200; // 1.2s between batches
+  const BATCH_SIZE = 2;
+  const BATCH_DELAY_MS = 35000; // 35s — keeps us under Groq 12k TPM limit
 
   logger.info({ agentCount: AGENTS.length, batchSize: BATCH_SIZE }, "Starting multi-agent news generation");
 
